@@ -10,7 +10,27 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+import streamlit as st
 
+# ... ваш код ...
+
+# --- Скрытие элементов интерфейса Streamlit ---
+hide_streamlit_style = """
+<style>
+    /* Скрывает главное меню (включая пункт "GitHub") */
+    #MainMenu {visibility: hidden;}
+    
+    /* Скрывает футер ("Made with Streamlit") */
+    footer {visibility: hidden;}
+    
+    /* Скрывает кнопку "Deploy" */
+    .stDeployButton {display: none;}
+    
+    /* Скрывает верхнюю панель с опциями */
+    header {visibility: hidden;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # --- CSS для красивого оформления ---
 st.markdown("""
 <style>
