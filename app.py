@@ -268,19 +268,104 @@ elif page == "Опыт":
 elif page == "Отзывы":
     st.header("⭐ Отзывы моих учеников")
     
-    if df_reviews.empty:
-        st.info("Пока нет отзывов. Будьте первым! 😊")
-    else:
+    # --- Отображение существующих отзывов ---
+    if not df_reviews.empty:
+        st.subheader("📖 Что говорят мои ученики")
+        
+        # Проверяем колонки
         cols = df_reviews.columns.tolist()
-        name_col = next((c for c in cols if any(word in c.lower() for word in ['имя', 'name', 'ученик'])), cols[0] if cols else None)
-        review_col = next((c for c in cols if any(word in c.lower() for word in ['отзыв', 'review', 'текст'])), cols[1] if len(cols) > 1 else None)
+        name_col = next((c for c in cols if any(word in c.lower() for word in ['имя', 'name', 'ученик'])), None)
+        review_col = next((c for c in cols if any(word in c.lower() for word in ['отзыв', 'review', 'текст'])), None)
+        rating_col = next((c for c in cols if any(word in c.lower() for word in ['оценк', 'rating', 'балл'])), None)
         
         if name_col and review_col:
+            # Показываем отзывы в красивом формате
             for _, row in df_reviews.iterrows():
-                st.write(f"**{row[name_col]}**: {row[review_col]}")
+                rating_stars = "⭐" * int(row[rating_col]) if rating_col and pd.notna(row[rating_col]) else ""
+                st.markdown(f"""
+                <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                    <strong>{row[name_col]}</strong> {rating_stars}
+                    <p style="margin-top: 5px;">{row[review_col]}</p>
+                </div>
+                """, unsafe_allow_html=True)
         else:
-            st.warning("Показываю все данные:")
             st.dataframe(df_reviews)
+    else:
+        st.info("📭 Пока нет отзывов. Будьте первым! 😊")
+    
+    st.divider()
+    
+    # --- Форма для добавления отзыва ---
+    st.subheader("✍️ Оставить отзыв")
+    st.caption("Ваше мнение поможет другим ученикам сделать выбор")
+    
+    with st.form(key="review_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            reviewer_name = st.text_input(
+                "Ваше имя",
+                placeholder="Введите ваше имя",
+                key="reviewer_name"
+            )
+        
+        with col2:
+            rating = st.select_slider(
+                "Оценка",
+                options=[1, 2, 3, 4, 5],
+                value=5,
+                key="review_rating"
+            )
+            st.caption(f"⭐ {rating} из 5")
+        
+        review_text = st.text_area(
+            "Ваш отзыв",
+            placeholder="Расскажите о вашем опыте занятий...",
+            height=100,
+            key="review_text"
+        )
+        
+        # Кнопка отправки
+        submitted = st.form_submit_button("📤 Отправить отзыв")
+        
+        if submitted:
+            # Проверяем, что поля заполнены
+            if not reviewer_name.strip():
+                st.error("❌ Пожалуйста, введите ваше имя")
+            elif not review_text.strip():
+                st.error("❌ Пожалуйста, напишите текст отзыва")
+            else:
+                try:
+                    # Подготавливаем данные для записи
+                    new_review = pd.DataFrame({
+                        'Имя': [reviewer_name.strip()],
+                        'Отзыв': [review_text.strip()],
+                        'Оценка': [rating]
+                    })
+                    
+                    # Проверяем, есть ли уже данные в таблице
+                    if df_reviews.empty:
+                        # Если таблица пустая, записываем новые данные
+                        conn.update(worksheet="Reviews", data=new_review)
+                    else:
+                        # Если данные есть, добавляем новую строку
+                        # Получаем существующие данные и добавляем новую
+                        existing_data = conn.read(worksheet="Reviews", ttl=0)
+                        updated_data = pd.concat([existing_data, new_review], ignore_index=True)
+                        conn.update(worksheet="Reviews", data=updated_data)
+                    
+                    # Очищаем кэш, чтобы отзыв сразу отобразился
+                    st.cache_data.clear()
+                    
+                    # Показываем успешное сообщение
+                    st.success("✅ Спасибо за ваш отзыв! Он появится на странице после обновления.")
+                    
+                    # Перезагружаем данные
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"❌ Ошибка при сохранении отзыва: {str(e)}")
+                    st.info("💡 Убедитесь, что в Google Таблице есть лист 'Reviews' с колонками: Имя, Отзыв, Оценка")
 
 # --- 8. Личный кабинет ---
 elif page == "Личный кабинет":
