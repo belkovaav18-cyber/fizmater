@@ -4,17 +4,11 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# streamlit_app.py
-
-import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
-
 # --- Настройка страницы (должна быть первой) ---
 st.set_page_config(
     page_title="Репетитор по физике", 
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # --- CSS для красивого оформления ---
@@ -28,69 +22,29 @@ st.markdown("""
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* Стили для навигации в сайдбаре */
-    .stSidebar .stRadio > div {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+    /* Скрываем боковую панель */
+    .stSidebar {
+        display: none !important;
     }
     
-    .stSidebar .stRadio label {
-        font-size: 18px !important;
-        font-weight: 500 !important;
-        padding: 10px 16px !important;
-        border-radius: 12px !important;
-        transition: all 0.2s ease !important;
-        background-color: transparent !important;
-        cursor: pointer !important;
-        font-family: 'Inter', sans-serif !important;
-        letter-spacing: -0.01em !important;
+    .main > div {
+        padding-top: 0 !important;
     }
     
-    .stSidebar .stRadio label:hover {
-        background-color: #f0f2f6 !important;
-    }
-    
-    .stSidebar .stRadio label[data-baseweb="radio"] {
-        padding: 12px 16px !important;
-    }
-    
-    /* Выделение активного пункта */
-    .stSidebar .stRadio [role="radiogroup"] {
-        gap: 4px;
-    }
-    
-    .stSidebar .stRadio [role="radio"][aria-checked="true"] {
-        background-color: #e8edf5 !important;
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        border-left: 4px solid #4A6CF7 !important;
-    }
-    
-    /* Заголовок сайдбара */
-    .stSidebar h1 {
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 24px !important;
-        letter-spacing: -0.02em !important;
-        margin-bottom: 20px !important;
-    }
-    
-    /* Кнопка обновления */
-    .stSidebar .stButton button {
+    /* Стили для кнопок навигации */
+    .stButton button {
         font-family: 'Inter', sans-serif !important;
         font-weight: 500 !important;
         border-radius: 10px !important;
-        padding: 8px 16px !important;
-        background-color: #4A6CF7 !important;
-        color: white !important;
+        padding: 10px 16px !important;
+        font-size: 15px !important;
+        transition: all 0.2s ease !important;
         border: none !important;
-        width: 100% !important;
-        margin-top: 16px !important;
     }
     
-    .stSidebar .stButton button:hover {
-        background-color: #3a5cd9 !important;
+    .stButton button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     /* Заголовки страниц */
@@ -101,6 +55,10 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# --- Инициализация состояния страницы ---
+if "page" not in st.session_state:
+    st.session_state.page = "Главная"
 
 # --- 1. Подключение к Google Таблицам ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -119,48 +77,36 @@ df_schedule = load_data("Schedule")
 df_students = load_data("Students")
 df_reviews = load_data("Reviews")
 
-# --- 3. Навигация (горизонтальная) ---
-
-# Скрываем боковую панель
-st.markdown("""
-<style>
-    .stSidebar {
-        display: none !important;
-    }
-    .main > div {
-        padding-top: 0 !important;
-    }
-    /* Стили для кнопок навигации */
-    .stButton button {
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
-        border-radius: 10px !important;
-        padding: 8px 12px !important;
-        font-size: 14px !important;
-        transition: all 0.2s ease !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+# --- 3. Горизонтальная навигация ---
 
 # Заголовок
-st.markdown('<div style="text-align: center; margin-bottom: 20px;"><span style="font-size: 24px; font-weight: 700;">📚 Репетитор по физике</span></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align: center; margin-bottom: 20px; padding-top: 10px;"><span style="font-size: 28px; font-weight: 700;">📚 Репетитор по физике</span></div>', unsafe_allow_html=True)
 
-# Горизонтальные кнопки
+# Создаем кнопки навигации
 cols = st.columns([1, 1, 1, 1, 1, 0.5])
 
-page_names = ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"]
-icons = ["🏠", "🎓", "💼", "⭐", "🔐"]
+# Определяем страницы
+nav_items = [
+    {"name": "Главная", "icon": "🏠"},
+    {"name": "Образование", "icon": "🎓"},
+    {"name": "Опыт", "icon": "💼"},
+    {"name": "Отзывы", "icon": "⭐"},
+    {"name": "Личный кабинет", "icon": "🔐"}
+]
 
-for i, (col, name, icon) in enumerate(zip(cols[:-1], page_names, icons)):
+# Отображаем кнопки
+for i, (col, item) in enumerate(zip(cols[:-1], nav_items)):
     with col:
-        is_active = page == name
+        is_active = st.session_state.page == item["name"]
         if st.button(
-            f"{icon} {name}", 
+            f"{item['icon']} {item['name']}", 
             use_container_width=True,
             type="primary" if is_active else "secondary"
         ):
-            page = name
+            st.session_state.page = item["name"]
+            st.rerun()
 
+# Кнопка обновления
 with cols[-1]:
     if st.button("🔄", use_container_width=True, help="Обновить данные из таблицы"):
         st.cache_data.clear()
@@ -168,7 +114,10 @@ with cols[-1]:
 
 st.divider()
 
-# --- 4. Главная ---
+# --- 4. Отображение страниц ---
+page = st.session_state.page
+
+# --- Главная ---
 if page == "Главная":
     st.title("👋 Привет! Я Александра")
     st.subheader("Репетитор по физике с восьмилетним стажем")
@@ -206,7 +155,7 @@ if page == "Главная":
         - @no8kaij
         """)
 
-# --- 5. Образование ---
+# --- Образование ---
 elif page == "Образование":
     st.header("🎓 Мое образование")
     
@@ -283,7 +232,7 @@ elif page == "Образование":
         with st.expander(f"🔬 {ach['event']}"):
             st.markdown(f"[Перейти к профилю на ИСТИНА]({ach['link']})")
 
-# --- 6. Опыт ---
+# --- Опыт ---
 elif page == "Опыт":
     st.header("💼 Опыт работы")
     
@@ -406,7 +355,7 @@ elif page == "Опыт":
     
     st.caption("Данные основаны на записях в трудовой книжке")
 
-# --- 7. Отзывы ---
+# --- Отзывы ---
 elif page == "Отзывы":
     st.header("⭐ Отзывы моих учеников")
     
@@ -549,7 +498,7 @@ elif page == "Отзывы":
                     st.error(f"❌ Ошибка при сохранении отзыва: {str(e)}")
                     st.info("💡 Убедитесь, что в Google Таблице есть лист 'Reviews' с колонками: Имя, Отзыв, Оценка")
 
-# --- 8. Личный кабинет ---
+# --- Личный кабинет ---
 elif page == "Личный кабинет":
     st.header("🔐 Личный кабинет")
     
