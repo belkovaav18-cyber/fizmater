@@ -19,9 +19,9 @@ def load_data(sheet_name):
 
 # Загружаем данные из разных листов твоей Google Таблицы
 # Названия листов должны соответствовать тем, что в твоем файле
-df_schedule = load_data("Расписание") # Например, лист с расписанием
-df_students = load_data("Ученики")    # Лист с данными учеников
-df_reviews = load_data("Отзывы")      # Лист с отзывами
+df_schedule = load_data("Schedule") # Например, лист с расписанием
+df_students = load_data("Students")    # Лист с данными учеников
+df_reviews = load_data("Reviews")      # Лист с отзывами
 
 # --- 3. Навигация (Боковое меню) ---
 st.sidebar.title("📚 Навигация")
