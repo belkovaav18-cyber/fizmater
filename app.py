@@ -281,7 +281,16 @@ elif page == "Отзывы":
         if name_col and review_col:
             # Показываем отзывы в красивом формате
             for _, row in df_reviews.iterrows():
-                rating_stars = "⭐" * int(row[rating_col]) if rating_col and pd.notna(row[rating_col]) else ""
+                # Получаем оценку
+                if rating_col and pd.notna(row[rating_col]):
+                    try:
+                        rating_value = int(row[rating_col])
+                        rating_stars = "⭐" * min(rating_value, 5) + "☆" * max(0, 5 - rating_value)
+                    except:
+                        rating_stars = ""
+                else:
+                    rating_stars = ""
+                
                 st.markdown(f"""
                 <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
                     <strong>{row[name_col]}</strong> {rating_stars}
@@ -299,25 +308,49 @@ elif page == "Отзывы":
     st.subheader("✍️ Оставить отзыв")
     st.caption("Ваше мнение поможет другим ученикам сделать выбор")
     
+    # Инициализируем состояние для выбора звезд
+    if "selected_rating" not in st.session_state:
+        st.session_state.selected_rating = 0
+    
     with st.form(key="review_form", clear_on_submit=True):
-        col1, col2 = st.columns(2)
+        # Имя
+        reviewer_name = st.text_input(
+            "Ваше имя",
+            placeholder="Введите ваше имя",
+            key="reviewer_name"
+        )
         
-        with col1:
-            reviewer_name = st.text_input(
-                "Ваше имя",
-                placeholder="Введите ваше имя",
-                key="reviewer_name"
-            )
+        # --- Выбор оценки через звездочки ---
+        st.write("**Ваша оценка:**")
         
-        with col2:
-            rating = st.select_slider(
-                "Оценка",
-                options=[1, 2, 3, 4, 5],
-                value=5,
-                key="review_rating"
-            )
-            st.caption(f"⭐ {rating} из 5")
+        # Создаем 5 колонок для звезд
+        star_cols = st.columns(5)
         
+        # Показываем звезды
+        for i in range(5):
+            with star_cols[i]:
+                # Если звезда выбрана (индекс < выбранного значения), показываем золотую звезду
+                if i < st.session_state.selected_rating:
+                    star_icon = "⭐"
+                else:
+                    star_icon = "☆"
+                
+                # Кнопка для выбора звезды
+                if st.button(
+                    star_icon, 
+                    key=f"star_{i}",
+                    help=f"Оценка {i+1} из 5"
+                ):
+                    st.session_state.selected_rating = i + 1
+                    st.rerun()
+        
+        # Показываем текущую оценку текстом
+        if st.session_state.selected_rating > 0:
+            st.caption(f"Вы выбрали: {'⭐' * st.session_state.selected_rating} ({st.session_state.selected_rating} из 5)")
+        else:
+            st.caption("Нажмите на звезду, чтобы поставить оценку")
+        
+        # Текст отзыва
         review_text = st.text_area(
             "Ваш отзыв",
             placeholder="Расскажите о вашем опыте занятий...",
@@ -332,6 +365,8 @@ elif page == "Отзывы":
             # Проверяем, что поля заполнены
             if not reviewer_name.strip():
                 st.error("❌ Пожалуйста, введите ваше имя")
+            elif st.session_state.selected_rating == 0:
+                st.error("❌ Пожалуйста, поставьте оценку")
             elif not review_text.strip():
                 st.error("❌ Пожалуйста, напишите текст отзыва")
             else:
@@ -340,27 +375,24 @@ elif page == "Отзывы":
                     new_review = pd.DataFrame({
                         'Имя': [reviewer_name.strip()],
                         'Отзыв': [review_text.strip()],
-                        'Оценка': [rating]
+                        'Оценка': [st.session_state.selected_rating]
                     })
                     
                     # Проверяем, есть ли уже данные в таблице
                     if df_reviews.empty:
-                        # Если таблица пустая, записываем новые данные
                         conn.update(worksheet="Reviews", data=new_review)
                     else:
-                        # Если данные есть, добавляем новую строку
-                        # Получаем существующие данные и добавляем новую
                         existing_data = conn.read(worksheet="Reviews", ttl=0)
                         updated_data = pd.concat([existing_data, new_review], ignore_index=True)
                         conn.update(worksheet="Reviews", data=updated_data)
                     
-                    # Очищаем кэш, чтобы отзыв сразу отобразился
+                    # Сбрасываем выбор звезд
+                    st.session_state.selected_rating = 0
+                    
+                    # Очищаем кэш
                     st.cache_data.clear()
                     
-                    # Показываем успешное сообщение
                     st.success("✅ Спасибо за ваш отзыв! Он появится на странице после обновления.")
-                    
-                    # Перезагружаем данные
                     st.rerun()
                     
                 except Exception as e:
