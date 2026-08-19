@@ -122,10 +122,6 @@ df_reviews = load_data("Reviews")
 # --- 3. Навигация ---
 st.sidebar.title("📚 Меню")
 
-# Добавляем кнопку обновления в сайдбар
-if st.sidebar.button("🔄 Обновить данные из таблицы", use_container_width=False):
-    st.cache_data.clear()
-    st.rerun()
 
 st.sidebar.markdown("---")
 
