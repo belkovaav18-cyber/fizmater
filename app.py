@@ -312,6 +312,44 @@ elif page == "Отзывы":
     if "selected_rating" not in st.session_state:
         st.session_state.selected_rating = 0
     
+    # --- Выбор оценки через звездочки (вне формы) ---
+    st.write("**Ваша оценка:**")
+    
+    # Создаем 5 колонок для звезд
+    star_cols = st.columns(5)
+    
+    # Показываем звезды
+    for i in range(5):
+        with star_cols[i]:
+            # Если звезда выбрана (индекс < выбранного значения), показываем золотую звезду
+            if i < st.session_state.selected_rating:
+                star_icon = "⭐"
+                button_type = "primary"
+            else:
+                star_icon = "☆"
+                button_type = "secondary"
+            
+            # Используем кнопки вне формы для выбора звезд
+            if st.button(
+                star_icon, 
+                key=f"star_{i}",
+                help=f"Оценка {i+1} из 5",
+                type=button_type
+            ):
+                if st.session_state.selected_rating == i + 1:
+                    # Если нажали на уже выбранную звезду, сбрасываем
+                    st.session_state.selected_rating = 0
+                else:
+                    st.session_state.selected_rating = i + 1
+                st.rerun()
+    
+    # Показываем текущую оценку текстом
+    if st.session_state.selected_rating > 0:
+        st.caption(f"Вы выбрали: {'⭐' * st.session_state.selected_rating} ({st.session_state.selected_rating} из 5)")
+    else:
+        st.caption("Нажмите на звезду, чтобы поставить оценку")
+    
+    # --- Форма для ввода текста ---
     with st.form(key="review_form", clear_on_submit=True):
         # Имя
         reviewer_name = st.text_input(
@@ -319,36 +357,6 @@ elif page == "Отзывы":
             placeholder="Введите ваше имя",
             key="reviewer_name"
         )
-        
-        # --- Выбор оценки через звездочки ---
-        st.write("**Ваша оценка:**")
-        
-        # Создаем 5 колонок для звезд
-        star_cols = st.columns(5)
-        
-        # Показываем звезды
-        for i in range(5):
-            with star_cols[i]:
-                # Если звезда выбрана (индекс < выбранного значения), показываем золотую звезду
-                if i < st.session_state.selected_rating:
-                    star_icon = "⭐"
-                else:
-                    star_icon = "☆"
-                
-                # Кнопка для выбора звезды
-                if st.button(
-                    star_icon, 
-                    key=f"star_{i}",
-                    help=f"Оценка {i+1} из 5"
-                ):
-                    st.session_state.selected_rating = i + 1
-                    st.rerun()
-        
-        # Показываем текущую оценку текстом
-        if st.session_state.selected_rating > 0:
-            st.caption(f"Вы выбрали: {'⭐' * st.session_state.selected_rating} ({st.session_state.selected_rating} из 5)")
-        else:
-            st.caption("Нажмите на звезду, чтобы поставить оценку")
         
         # Текст отзыва
         review_text = st.text_area(
