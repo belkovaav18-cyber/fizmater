@@ -294,7 +294,7 @@ elif page == "Личный кабинет":
         if df_schedule.empty:
             st.warning("Нет данных о расписании. Добавьте занятия в Google Таблицу.")
         else:
-            # Ищем точное совпадение по колонке "Ученик"
+            # Ищем занятия ученика
             if 'Ученик' in df_schedule.columns:
                 user_schedule = df_schedule[df_schedule['Ученик'].astype(str).str.strip() == student_name]
                 
@@ -306,40 +306,49 @@ elif page == "Личный кабинет":
                         time_val = lesson.get('Время', '')
                         status_val = lesson.get('Состоялось', '')
                         
-                        # Определяем статус
+                        # Определяем статус занятия
                         if pd.notna(status_val) and str(status_val).strip():
                             status_str = "✅ Состоялось" if str(status_val).lower() in ['да', 'yes', 'true', '1'] else "⏳ Запланировано"
                         else:
                             status_str = "📅 Запланировано"
                         
-                        st.write(f"**{date_val} {time_val}** - {status_str}")
+                        # --- Определяем статус оплаты ---
+                        payment_status = lesson.get('Оплачено', '')
+                        if pd.notna(payment_status) and str(payment_status).strip().lower() in ['да', 'yes', 'true', '1', '✅']:
+                            payment_icon = "✅"
+                            payment_text = "Оплачено"
+                        else:
+                            payment_icon = "❌"
+                            payment_text = "Не оплачено"
                         
-                        # --- Показываем материалы занятия (исправленная версия) ---
+                        # Показываем занятие с иконкой оплаты
+                        st.write(f"**{date_val} {time_val}** - {status_str} &nbsp;&nbsp; {payment_icon} {payment_text}")
+                        
+                        # --- Подробнее ---
                         with st.expander("📎 Подробнее"):
                             has_content = False
                             
-                            # Проверяем ссылку
+                            # Ссылка
                             if 'Ссылка' in lesson:
                                 link_val = lesson['Ссылка']
                                 if pd.notna(link_val) and str(link_val).strip():
                                     st.write(f"🔗 **Ссылка на встречу:** {link_val}")
                                     has_content = True
                             
-                            # Проверяем ДЗ
+                            # ДЗ
                             if 'ДЗ' in lesson:
                                 dz_val = lesson['ДЗ']
                                 if pd.notna(dz_val) and str(dz_val).strip():
                                     st.write(f"📄 **Домашнее задание:** {dz_val}")
                                     has_content = True
                             
-                            # Проверяем конспект
+                            # Конспект
                             if 'Конспект' in lesson:
                                 konspekt_val = lesson['Конспект']
                                 if pd.notna(konspekt_val) and str(konspekt_val).strip():
                                     st.write(f"📝 **Конспект урока:** {konspekt_val}")
                                     has_content = True
                             
-                            # Если ничего нет, показываем сообщение
                             if not has_content:
                                 st.info("📭 Материалы к занятию пока не добавлены")
                 else:
@@ -349,22 +358,7 @@ elif page == "Личный кабинет":
         
         st.divider()
         
-        # --- Трекер оплат ---
-        st.write("### 💰 Трекер оплат")
-        
-        # Проверяем, есть ли данные об ученике
-        if not df_students.empty and 'Имя' in df_students.columns:
-            student_data = df_students[df_students['Имя'].astype(str).str.strip() == student_name]
-            if not student_data.empty:
-                st.write("**Статус оплаты:**")
-                st.info("💳 Информация об оплатах будет отображаться здесь")
-            else:
-                st.info("Данные об оплатах не найдены")
-        else:
-            st.info("Здесь будут данные об оплатах")
-        
         # --- Ссылка на оплату ---
-        st.write("---")
         st.write("### 💳 Оплатить занятия")
         st.markdown("""
         **Для оплаты занятий перейдите по ссылке ниже:**
