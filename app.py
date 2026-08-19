@@ -314,29 +314,48 @@ elif page == "Личный кабинет":
                         
                         st.write(f"**{date_val} {time_val}** - {status_str}")
                         
-                        # Показываем материалы занятия
+                        # --- Показываем материалы занятия (исправленная версия) ---
                         with st.expander("📎 Подробнее"):
-                            if 'Ссылка' in lesson and pd.notna(lesson['Ссылка']) and str(lesson['Ссылка']).strip():
-                                st.write(f"🔗 **Ссылка на встречу:** {lesson['Ссылка']}")
-                            if 'ДЗ' in lesson and pd.notna(lesson['ДЗ']) and str(lesson['ДЗ']).strip():
-                                st.write(f"📄 **Домашнее задание:** {lesson['ДЗ']}")
-                            if 'Конспект' in lesson and pd.notna(lesson['Конспект']) and str(lesson['Конспект']).strip():
-                                st.write(f"📝 **Конспект урока:** {lesson['Конспект']}")
+                            has_content = False
+                            
+                            # Проверяем ссылку
+                            if 'Ссылка' in lesson:
+                                link_val = lesson['Ссылка']
+                                if pd.notna(link_val) and str(link_val).strip():
+                                    st.write(f"🔗 **Ссылка на встречу:** {link_val}")
+                                    has_content = True
+                            
+                            # Проверяем ДЗ
+                            if 'ДЗ' in lesson:
+                                dz_val = lesson['ДЗ']
+                                if pd.notna(dz_val) and str(dz_val).strip():
+                                    st.write(f"📄 **Домашнее задание:** {dz_val}")
+                                    has_content = True
+                            
+                            # Проверяем конспект
+                            if 'Конспект' in lesson:
+                                konspekt_val = lesson['Конспект']
+                                if pd.notna(konspekt_val) and str(konspekt_val).strip():
+                                    st.write(f"📝 **Конспект урока:** {konspekt_val}")
+                                    has_content = True
+                            
+                            # Если ничего нет, показываем сообщение
+                            if not has_content:
+                                st.info("📭 Материалы к занятию пока не добавлены")
                 else:
                     st.info(f"У ученика {student_name} нет запланированных занятий.")
             else:
                 st.error("В таблице нет колонки 'Ученик'!")
         
-                # --- Трекер оплат ---
         st.divider()
+        
+        # --- Трекер оплат ---
         st.write("### 💰 Трекер оплат")
         
         # Проверяем, есть ли данные об ученике
         if not df_students.empty and 'Имя' in df_students.columns:
             student_data = df_students[df_students['Имя'].astype(str).str.strip() == student_name]
             if not student_data.empty:
-                # Здесь можно вывести статус оплаты, если он есть в таблице Students
-                # Например, если есть колонка "Оплачено"
                 st.write("**Статус оплаты:**")
                 st.info("💳 Информация об оплатах будет отображаться здесь")
             else:
