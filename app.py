@@ -119,18 +119,54 @@ df_schedule = load_data("Schedule")
 df_students = load_data("Students")
 df_reviews = load_data("Reviews")
 
-# --- 3. Навигация ---
-st.sidebar.title("📚 Меню")
+# --- 3. Навигация (горизонтальная) ---
 
+# Скрываем боковую панель
+st.markdown("""
+<style>
+    .stSidebar {
+        display: none !important;
+    }
+    .main > div {
+        padding-top: 0 !important;
+    }
+    /* Стили для кнопок навигации */
+    .stButton button {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        border-radius: 10px !important;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        transition: all 0.2s ease !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-st.sidebar.markdown("---")
+# Заголовок
+st.markdown('<div style="text-align: center; margin-bottom: 20px;"><span style="font-size: 24px; font-weight: 700;">📚 Репетитор по физике</span></div>', unsafe_allow_html=True)
 
-page = st.sidebar.radio(
-    "Перейти на страницу:", 
-    ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"],
-    key="main_navigation",
-    label_visibility="collapsed"
-)
+# Горизонтальные кнопки
+cols = st.columns([1, 1, 1, 1, 1, 0.5])
+
+page_names = ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"]
+icons = ["🏠", "🎓", "💼", "⭐", "🔐"]
+
+for i, (col, name, icon) in enumerate(zip(cols[:-1], page_names, icons)):
+    with col:
+        is_active = page == name
+        if st.button(
+            f"{icon} {name}", 
+            use_container_width=True,
+            type="primary" if is_active else "secondary"
+        ):
+            page = name
+
+with cols[-1]:
+    if st.button("🔄", use_container_width=True, help="Обновить данные из таблицы"):
+        st.cache_data.clear()
+        st.rerun()
+
+st.divider()
 
 # --- 4. Главная ---
 if page == "Главная":
