@@ -4,8 +4,103 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
+# streamlit_app.py
+
+import streamlit as st
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
+
 # --- Настройка страницы (должна быть первой) ---
-st.set_page_config(page_title="Репетитор по физике", layout="wide")
+st.set_page_config(
+    page_title="Репетитор по физике", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- CSS для красивого оформления ---
+st.markdown("""
+<style>
+    /* Импорт красивого шрифта */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    /* Применяем шрифт ко всему приложению */
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Стили для навигации в сайдбаре */
+    .stSidebar .stRadio > div {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .stSidebar .stRadio label {
+        font-size: 18px !important;
+        font-weight: 500 !important;
+        padding: 10px 16px !important;
+        border-radius: 12px !important;
+        transition: all 0.2s ease !important;
+        background-color: transparent !important;
+        cursor: pointer !important;
+        font-family: 'Inter', sans-serif !important;
+        letter-spacing: -0.01em !important;
+    }
+    
+    .stSidebar .stRadio label:hover {
+        background-color: #f0f2f6 !important;
+    }
+    
+    .stSidebar .stRadio label[data-baseweb="radio"] {
+        padding: 12px 16px !important;
+    }
+    
+    /* Выделение активного пункта */
+    .stSidebar .stRadio [role="radiogroup"] {
+        gap: 4px;
+    }
+    
+    .stSidebar .stRadio [role="radio"][aria-checked="true"] {
+        background-color: #e8edf5 !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        border-left: 4px solid #4A6CF7 !important;
+    }
+    
+    /* Заголовок сайдбара */
+    .stSidebar h1 {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 24px !important;
+        letter-spacing: -0.02em !important;
+        margin-bottom: 20px !important;
+    }
+    
+    /* Кнопка обновления */
+    .stSidebar .stButton button {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        border-radius: 10px !important;
+        padding: 8px 16px !important;
+        background-color: #4A6CF7 !important;
+        color: white !important;
+        border: none !important;
+        width: 100% !important;
+        margin-top: 16px !important;
+    }
+    
+    .stSidebar .stButton button:hover {
+        background-color: #3a5cd9 !important;
+    }
+    
+    /* Заголовки страниц */
+    h1, h2, h3, h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- 1. Подключение к Google Таблицам ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -25,16 +120,21 @@ df_students = load_data("Students")
 df_reviews = load_data("Reviews")
 
 # --- 3. Навигация ---
-st.sidebar.title("📚 Навигация")
+st.sidebar.title("📚 Меню")
 
-# Кнопка обновления
-if st.sidebar.button("🔄 Обновить данные из таблицы"):
+# Добавляем кнопку обновления в сайдбар
+if st.sidebar.button("🔄 Обновить данные из таблицы", use_container_width=False):
     st.cache_data.clear()
     st.rerun()
 
-page = st.sidebar.radio("Перейти на страницу:", 
-                        ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"],
-                        key="main_navigation")
+st.sidebar.markdown("---")
+
+page = st.sidebar.radio(
+    "Перейти на страницу:", 
+    ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"],
+    key="main_navigation",
+    label_visibility="collapsed"
+)
 
 # --- 4. Главная ---
 if page == "Главная":
@@ -59,9 +159,8 @@ if page == "Главная":
         **📅 Запись на занятия**
         
         Свяжитесь со мной:
-        - ✉️ alexandra@email.com
-        - 📱 +7 (XXX) XXX-XX-XX
-        - 📍 Москва (онлайн)
+        - @no8kaij
+
         """)
 
 # --- 5. Образование ---
