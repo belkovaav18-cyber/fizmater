@@ -151,6 +151,12 @@ if page == "Главная":
         - Домашние задания с проверкой
         """)
     with col2:
+
+        st.image(
+        "images/avatar.jpg",
+        caption="Александра, репетитор по физике",
+        use_container_width=True
+        )
         st.info("""
         **📅 Запись на занятия**
         
