@@ -13,14 +13,23 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 @st.cache_data(ttl=600)
 def load_data(sheet_name):
     try:
-        return conn.read(worksheet=sheet_name, ttl=600)
+        df = conn.read(worksheet=sheet_name, ttl=600)
+        st.success(f"✅ Загружено {len(df)} строк из листа '{sheet_name}'")
+        return df
     except Exception as e:
-        st.error(f"Ошибка загрузки из '{sheet_name}': {str(e)}")
+        st.error(f"❌ Ошибка загрузки из '{sheet_name}': {str(e)}")
         return pd.DataFrame()
 
 df_schedule = load_data("Schedule")
 df_students = load_data("Students")
 df_reviews = load_data("Reviews")
+
+# --- Отладка: показываем, что загрузилось ---
+if not df_schedule.empty:
+    with st.sidebar.expander("🔍 Отладка: данные расписания"):
+        st.write(f"Загружено записей: {len(df_schedule)}")
+        st.write("Колонки:", df_schedule.columns.tolist())
+        st.dataframe(df_schedule)
 
 # --- 3. Навигация ---
 st.sidebar.title("📚 Навигация")
@@ -147,12 +156,6 @@ elif page == "Отзывы":
     if df_reviews.empty:
         st.info("Пока нет отзывов. Будьте первым! 😊")
     else:
-        # Показываем структуру таблицы
-        with st.expander("📋 Структура таблицы Reviews"):
-            st.write("Колонки:", df_reviews.columns.tolist())
-            st.dataframe(df_reviews)
-        
-        # Ищем колонки для отзывов
         cols = df_reviews.columns.tolist()
         name_col = next((c for c in cols if any(word in c.lower() for word in ['имя', 'name', 'ученик'])), cols[0] if cols else None)
         review_col = next((c for c in cols if any(word in c.lower() for word in ['отзыв', 'review', 'текст'])), cols[1] if len(cols) > 1 else None)
@@ -175,46 +178,48 @@ elif page == "Личный кабинет":
         
         if df_schedule.empty:
             st.warning("Нет данных о расписании. Добавьте занятия в Google Таблицу.")
+            st.info("📝 Убедитесь, что в таблице есть данные и лист называется 'Schedule'")
         else:
-            # Показываем структуру таблицы
-            with st.expander("📋 Структура таблицы Schedule"):
-                st.write("Колонки:", df_schedule.columns.tolist())
-                st.dataframe(df_schedule)
+            # Показываем все записи для отладки
+            st.write(f"Всего записей в расписании: {len(df_schedule)}")
             
-            # Автоматически находим колонку с именем ученика
-            cols = df_schedule.columns.tolist()
-            student_col = next((c for c in cols if any(word in c.lower() for word in ['ученик', 'student', 'имя', 'name'])), None)
-            
-            if student_col is None:
-                st.error(f"Не найдена колонка с именем ученика. Доступные колонки: {cols}")
-            else:
-                # Фильтруем по имени
-                user_schedule = df_schedule[df_schedule[student_col].astype(str).str.contains(student_name, case=False, na=False)]
+            # Ищем точное совпадение по колонке "Ученик"
+            if 'Ученик' in df_schedule.columns:
+                user_schedule = df_schedule[df_schedule['Ученик'].astype(str).str.strip() == student_name]
+                
+                st.write(f"Найдено записей для '{student_name}': {len(user_schedule)}")
                 
                 if not user_schedule.empty:
                     st.write("### 📅 Твои занятия")
                     
-                    # Находим колонку с датой
-                    date_col = next((c for c in cols if any(word in c.lower() for word in ['дата', 'date'])), None)
-                    status_col = next((c for c in cols if any(word in c.lower() for word in ['состоял', 'status', 'статус'])), None)
-                    
                     for _, lesson in user_schedule.iterrows():
-                        date_str = lesson[date_col] if date_col else "дата не указана"
-                        if status_col:
-                            status_val = str(lesson[status_col]).lower()
-                            status_str = "✅ Состоялось" if status_val in ['да', 'yes', 'true', '1'] else "⏳ Запланировано"
+                        date_val = lesson.get('Дата', 'дата не указана')
+                        time_val = lesson.get('Время', '')
+                        status_val = lesson.get('Состоялось', '')
+                        
+                        # Определяем статус
+                        if pd.notna(status_val) and str(status_val).strip():
+                            status_str = "✅ Состоялось" if str(status_val).lower() in ['да', 'yes', 'true', '1'] else "⏳ Запланировано"
                         else:
                             status_str = "📅 Запланировано"
-                        st.write(f"**{date_str}** - {status_str}")
                         
+                        st.write(f"**{date_val} {time_val}** - {status_str}")
+                        
+                        # Показываем материалы занятия
                         with st.expander("📎 Подробнее"):
-                            for col in cols:
-                                if col not in [student_col, date_col, status_col]:
-                                    val = lesson[col]
-                                    if pd.notna(val) and str(val).strip():
-                                        st.write(f"**{col}:** {val}")
+                            if 'Ссылка' in lesson and pd.notna(lesson['Ссылка']) and str(lesson['Ссылка']).strip():
+                                st.write(f"🔗 **Ссылка на встречу:** {lesson['Ссылка']}")
+                            if 'ДЗ' in lesson and pd.notna(lesson['ДЗ']) and str(lesson['ДЗ']).strip():
+                                st.write(f"📄 **Домашнее задание:** {lesson['ДЗ']}")
+                            if 'Конспект' in lesson and pd.notna(lesson['Конспект']) and str(lesson['Конспект']).strip():
+                                st.write(f"📝 **Конспект урока:** {lesson['Конспект']}")
                 else:
                     st.info(f"У ученика {student_name} нет запланированных занятий.")
+                    st.write("💡 Проверьте, что имя в таблице написано точно так же, как вы вводите. В таблице сейчас:")
+                    st.dataframe(df_schedule[['Ученик']].drop_duplicates())
+            else:
+                st.error("В таблице нет колонки 'Ученик'!")
+                st.write("Доступные колонки:", df_schedule.columns.tolist())
         
         st.divider()
         st.write("### 💰 Трекер оплат")
