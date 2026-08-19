@@ -151,18 +151,24 @@ if page == "Главная":
         - Домашние задания с проверкой
         """)
     with col2:
-
-        st.image(
-        "images/avatar.jpg",
-        caption="Александра, репетитор по физике",
-        use_container_width=True
-        )
+        try:
+            st.image(
+                "avatar.jpg",
+                caption="Александра, репетитор по физике",
+                use_container_width=True
+            )
+        except:
+            st.image(
+                "https://via.placeholder.com/400x500?text=Александра",
+                caption="Александра, репетитор по физике",
+                use_container_width=True
+            )
+        
         st.info("""
         **📅 Запись на занятия**
         
         Свяжитесь со мной:
         - @no8kaij
-
         """)
 
 # --- 5. Образование ---
