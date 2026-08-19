@@ -106,11 +106,6 @@ for i, (col, item) in enumerate(zip(cols[:-1], nav_items)):
             st.session_state.page = item["name"]
             st.rerun()
 
-# Кнопка обновления
-with cols[-1]:
-    if st.button("🔄", use_container_width=True, help="Обновить данные из таблицы"):
-        st.cache_data.clear()
-        st.rerun()
 
 st.divider()
 
