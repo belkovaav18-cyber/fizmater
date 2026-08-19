@@ -10,7 +10,8 @@ st.set_page_config(page_title="Репетитор по физике", layout="wi
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- 2. Загрузка данных ---
-@st.cache_data(ttl=600)
+# --- 2. Загрузка данных (с кешированием) ---
+@st.cache_data(ttl=30)
 def load_data(sheet_name):
     try:
         return conn.read(worksheet=sheet_name, ttl=600)
@@ -18,9 +19,21 @@ def load_data(sheet_name):
         st.error(f"Ошибка загрузки из '{sheet_name}': {str(e)}")
         return pd.DataFrame()
 
+# Загружаем данные
 df_schedule = load_data("Schedule")
 df_students = load_data("Students")
 df_reviews = load_data("Reviews")
+
+# --- 3. Навигация ---
+st.sidebar.title("📚 Навигация")
+page = st.sidebar.radio("Перейти на страницу:", 
+                        ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"])
+
+# --- Кнопка для принудительного обновления данных ---
+if st.sidebar.button("🔄 Обновить данные из таблицы"):
+    st.cache_data.clear()
+    st.rerun()
+    st.sidebar.success("✅ Данные обновлены!")
 
 # --- 3. Навигация ---
 st.sidebar.title("📚 Навигация")
