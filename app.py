@@ -4,14 +4,14 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
+# --- Настройка страницы (должна быть первой) ---
 st.set_page_config(page_title="Репетитор по физике", layout="wide")
 
 # --- 1. Подключение к Google Таблицам ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- 2. Загрузка данных ---
-# --- 2. Загрузка данных (с кешированием) ---
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=600)
 def load_data(sheet_name):
     try:
         return conn.read(worksheet=sheet_name, ttl=600)
@@ -26,19 +26,15 @@ df_reviews = load_data("Reviews")
 
 # --- 3. Навигация ---
 st.sidebar.title("📚 Навигация")
-page = st.sidebar.radio("Перейти на страницу:", 
-                        ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"])
 
-# --- Кнопка для принудительного обновления данных ---
+# Кнопка обновления
 if st.sidebar.button("🔄 Обновить данные из таблицы"):
     st.cache_data.clear()
     st.rerun()
-    st.sidebar.success("✅ Данные обновлены!")
 
-# --- 3. Навигация ---
-st.sidebar.title("📚 Навигация")
 page = st.sidebar.radio("Перейти на страницу:", 
-                        ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"])
+                        ["Главная", "Образование", "Опыт", "Отзывы", "Личный кабинет"],
+                        key="main_navigation")
 
 # --- 4. Главная ---
 if page == "Главная":
@@ -63,7 +59,9 @@ if page == "Главная":
         **📅 Запись на занятия**
         
         Свяжитесь со мной:
-        - @no8kaij
+        - ✉️ alexandra@email.com
+        - 📱 +7 (XXX) XXX-XX-XX
+        - 📍 Москва (онлайн)
         """)
 
 # --- 5. Образование ---
@@ -124,7 +122,6 @@ elif page == "Образование":
     # --- Достижения ---
     st.subheader("🏆 Достижения и публикации")
     
-    # Разделим на две категории: с годами и без
     achievements_with_year = [
         {"year": "2021-2022", "event": "Универсиада «Ломоносов»", "stage": "Заключительный этап", "achievement": "🥇 Победитель"},
         {"year": "2017-2018", "event": "Всероссийская олимпиада школьников", "stage": "Региональный (Брянская обл.)", "achievement": "🥉 Призер"},
@@ -132,25 +129,22 @@ elif page == "Образование":
     ]
     
     achievements_without_year = [
-        {"event": "Научные достижения", "stage": "https://istina.msu.ru/workers/353635785/"}
+        {"event": "Научные достижения", "link": "https://istina.msu.ru/workers/353635785/"}
     ]
     
-    # Сортируем достижения с годами (от новых к старым)
     for ach in sorted(achievements_with_year, key=lambda x: x["year"], reverse=True):
         with st.expander(f"📅 {ach['year']} — {ach['event']}"):
             st.write(f"**Этап:** {ach['stage']}")
             st.write(f"**Достижение:** {ach['achievement']}")
     
-    # Показываем достижения без года отдельно
     for ach in achievements_without_year:
         with st.expander(f"🔬 {ach['event']}"):
-            st.write(f"**Ссылка:** {ach['stage']}")
+            st.markdown(f"[Перейти к профилю на ИСТИНА]({ach['link']})")
 
 # --- 6. Опыт ---
 elif page == "Опыт":
     st.header("💼 Опыт работы")
     
-    # ---- 1. Текущие места работы ----
     st.subheader("📍 Текущие места работы")
     
     col1, col2 = st.columns(2)
@@ -177,7 +171,6 @@ elif page == "Опыт":
             **Условия:** По совместительству
             """)
     
-    # Второй ряд текущих мест
     col3, col4 = st.columns(2)
     
     with col3:
@@ -203,10 +196,8 @@ elif page == "Опыт":
     
     st.divider()
     
-    # ---- 2. Предыдущий опыт работы ----
     st.subheader("📋 Предыдущие места работы")
     
-    # Используем вкладки для категорий
     tab1, tab2, tab3 = st.tabs(["🏫 Научные организации", "📚 Образовательные учреждения", "📄 Полная хронология"])
     
     with tab1:
@@ -234,7 +225,6 @@ elif page == "Опыт":
         """)
     
     with tab3:
-        # Создаем DataFrame для хронологии
         experience_data = {
             "Дата": [
                 "10.04.2026", "17.04.2026", "17.04.2026",
@@ -263,9 +253,7 @@ elif page == "Опыт":
     
     st.divider()
     
-    # ---- 3. Общий стаж ----
     st.subheader("📊 Сводка")
-    
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("🏛️ Научных организаций", "3")
@@ -275,7 +263,6 @@ elif page == "Опыт":
         st.metric("📅 Общий научный стаж", "~5 лет")
     
     st.caption("Данные основаны на записях в трудовой книжке")
-
 
 # --- 7. Отзывы ---
 elif page == "Отзывы":
@@ -299,7 +286,7 @@ elif page == "Отзывы":
 elif page == "Личный кабинет":
     st.header("🔐 Личный кабинет")
     
-    student_name = st.text_input("Введи свое имя для входа (демо-режим)")
+    student_name = st.text_input("Введи свое имя для входа (демо-режим)", key="student_name_input")
     
     if student_name:
         st.subheader(f"Здравствуй, {student_name}! 👋")
@@ -307,25 +294,22 @@ elif page == "Личный кабинет":
         if df_schedule.empty:
             st.warning("Нет данных о расписании. Добавьте занятия в Google Таблицу.")
         else:
-            # Ищем занятия ученика
             if 'Ученик' in df_schedule.columns:
                 user_schedule = df_schedule[df_schedule['Ученик'].astype(str).str.strip() == student_name]
                 
                 if not user_schedule.empty:
                     st.write("### 📅 Твои занятия")
                     
-                    for _, lesson in user_schedule.iterrows():
+                    for idx, lesson in user_schedule.iterrows():
                         date_val = lesson.get('Дата', 'дата не указана')
                         time_val = lesson.get('Время', '')
                         status_val = lesson.get('Состоялось', '')
                         
-                        # Определяем статус занятия
                         if pd.notna(status_val) and str(status_val).strip():
                             status_str = "✅ Состоялось" if str(status_val).lower() in ['да', 'yes', 'true', '1'] else "⏳ Запланировано"
                         else:
                             status_str = "📅 Запланировано"
                         
-                        # --- Определяем статус оплаты ---
                         payment_status = lesson.get('Оплачено', '')
                         if pd.notna(payment_status) and str(payment_status).strip().lower() in ['да', 'yes', 'true', '1', '✅']:
                             payment_icon = "✅"
@@ -334,28 +318,23 @@ elif page == "Личный кабинет":
                             payment_icon = "❌"
                             payment_text = "Не оплачено"
                         
-                        # Показываем занятие с иконкой оплаты
                         st.write(f"**{date_val} {time_val}** - {status_str} &nbsp;&nbsp; {payment_icon} {payment_text}")
                         
-                        # --- Подробнее ---
-                        with st.expander("📎 Подробнее"):
+                        with st.expander(f"📎 Подробнее - {date_val}"):
                             has_content = False
                             
-                            # Ссылка
                             if 'Ссылка' in lesson:
                                 link_val = lesson['Ссылка']
                                 if pd.notna(link_val) and str(link_val).strip():
                                     st.write(f"🔗 **Ссылка на встречу:** {link_val}")
                                     has_content = True
                             
-                            # ДЗ
                             if 'ДЗ' in lesson:
                                 dz_val = lesson['ДЗ']
                                 if pd.notna(dz_val) and str(dz_val).strip():
                                     st.write(f"📄 **Домашнее задание:** {dz_val}")
                                     has_content = True
                             
-                            # Конспект
                             if 'Конспект' in lesson:
                                 konspekt_val = lesson['Конспект']
                                 if pd.notna(konspekt_val) and str(konspekt_val).strip():
@@ -371,7 +350,6 @@ elif page == "Личный кабинет":
         
         st.divider()
         
-        # --- Ссылка на оплату ---
         st.write("### 💳 Оплатить занятия")
         st.markdown("""
         **Для оплаты занятий перейдите по ссылке ниже:**
@@ -380,15 +358,3 @@ elif page == "Личный кабинет":
         
         > *В сумму оплаты включены налог и комиссия платежной системы.*
         """)
-        
-        # Показываем информацию об оплатах из таблицы Students
-        if not df_students.empty and 'Имя' in df_students.columns:
-            student_data = df_students[df_students['Имя'].astype(str).str.strip() == student_name]
-            if not student_data.empty:
-                st.write("**Статус оплаты:**")
-                # Здесь можно добавить колонку с оплатой в таблицу Students
-                st.info("💳 Информация об оплатах будет отображаться здесь")
-            else:
-                st.info("Данные об оплатах не найдены")
-        else:
-            st.info("Здесь будут данные об оплатах (скоро появится)")
